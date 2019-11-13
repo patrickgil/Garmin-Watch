@@ -32,6 +32,7 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
+#include<TimeLib.h>
 
 #define TFT_CS 5
 #define TFT_RST 22
@@ -90,21 +91,27 @@ void setup(void)
   delay(500);
 
   //Display functions can go here:
-  testdrawtext("Garmin (tm)", ST77X_WHTIE);
+  testdrawtext("Garmin (tm)", ST77XX_WHITE);
   delay(500);
 
-  tftPrintTest();
+
 
   Serial.println("Done.");
   delay(1000);
+
+
+  //setTime(hr,min,sec,day,mnth,yr);
+  setTime(19,05,16,12,11,2019);
 }
 
 void loop()
 {
-  tft.invertDisplay(true);
-  delay(500);
-  tft.invertDisplay(false);
-  delay(500);
+//tftPrintTest();
+  displayTime();
+//  tft.invertDisplay(true);
+//  delay(500);
+//  tft.invertDisplay(false);
+//  delay(500);
 }
 
 void testdrawtext(char *text, uint16_t color)
@@ -112,7 +119,7 @@ void testdrawtext(char *text, uint16_t color)
   tft.setCursor(0, 0);
   tft.setTextColor(color);
   tft.setTextWrap(true);
-  tft.print(text);
+  tft.println(text);
 }
 
 void testdrawrects(uint16_t color)
@@ -126,6 +133,8 @@ void testdrawrects(uint16_t color)
 
 void tftPrintTest()
 {
+  tft.setCursor(0,0);
+  tft.fillScreen(ST77XX_BLACK);
   tft.setTextWrap(false);
   tft.setTextColor(ST77XX_WHITE);
   tft.println("Sketch has been");
@@ -135,3 +144,28 @@ void tftPrintTest()
   tft.setTextColor(ST77XX_WHITE);
   tft.print(" seconds.");
 }
+
+void displayTime(){
+  tft.setCursor(0,0);
+  //tft.fillScreen(ST77XX_BLACK); commenting out to avoid obvious refresh artifact
+  tft.setTextWrap(false);
+  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+  tft.setTextSize(2);
+  tft.setCursor(0,24);
+  tft.println("Time ");
+  if(hour() < 10){
+      tft.print("0");
+    }
+  tft.print(hour());
+  tft.print(":");
+  if(minute() < 10){
+      tft.print("0");
+    }
+  tft.print(minute());
+  tft.print(":");
+  if(second() < 10){
+    tft.print("0");
+  }
+  tft.print(second());
+  delay(500);
+  }
