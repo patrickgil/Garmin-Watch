@@ -32,7 +32,9 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
-#include<TimeLib.h>
+#include <TimeLib.h>
+#include <Coordinates.h>
+Coordinates point = Coordinates();
 
 #define TFT_CS 5
 #define TFT_RST 22
@@ -91,7 +93,7 @@ void setup(void)
   delay(500);
 
   //Display functions can go here:
-  testdrawtext("Garmin (tm)", ST77XX_WHITE);
+  testdrawtext("garmin@watch:~ $ now", ST77XX_WHITE);
   delay(500);
 
 
@@ -101,13 +103,14 @@ void setup(void)
 
 
   //setTime(hr,min,sec,day,mnth,yr);
-  setTime(19,05,16,12,11,2019);
+  setTime(19,05,0,12,11,2019);
 }
 
 void loop()
 {
 //tftPrintTest();
-  displayTime();
+  //displayAnalog();
+  displayDigital();
 //  tft.invertDisplay(true);
 //  delay(500);
 //  tft.invertDisplay(false);
@@ -131,6 +134,33 @@ void testdrawrects(uint16_t color)
   }
 }
 
+//Analog Clock -- NEEDS WORK...
+void displayAnalog(){
+  tft.drawCircle(64, 80, 45, 0xFFFF);
+  //r cos phi + 64
+
+  float phi = (second()*6);
+  double xcart = 45*cos(phi);
+  double ycart = 45*sin(phi);
+  
+  
+  tft.setCursor(0,10);
+  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+  tft.println(xcart);
+  tft.println(ycart);
+  tft.println(phi);
+
+  //point.fromPolar(5, phi);
+  tft.drawLine(64,80, xcart, ycart, 0xFFFF);
+  //tft.drawLine(64,80, point.getX(), point.getY(), 0xFFFF);
+  }
+
+void displayDigital(){
+  displayTime();
+  displayDate();
+  displayBatt();
+  }
+
 void tftPrintTest()
 {
   tft.setCursor(0,0);
@@ -150,9 +180,10 @@ void displayTime(){
   //tft.fillScreen(ST77XX_BLACK); commenting out to avoid obvious refresh artifact
   tft.setTextWrap(false);
   tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
-  tft.setTextSize(2);
+  tft.setTextSize(1);
   tft.setCursor(0,24);
-  tft.println("Time ");
+  tft.print("[TIME] ");
+  tft.setTextColor(0xFADF, ST77XX_BLACK);
   if(hour() < 10){
       tft.print("0");
     }
@@ -168,4 +199,24 @@ void displayTime(){
   }
   tft.print(second());
   delay(500);
+  }
+
+  void displayDate(){
+    tft.setCursor(0,34);
+    tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+    tft.print("[DATE] ");
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print(day());
+    tft.print("/");
+    tft.print(month());
+    tft.print("/");
+    tft.print(year());
+    }
+
+void displayBatt(){
+  tft.setCursor(0,44);
+  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+  tft.print("[BATT] ");
+  tft.setTextColor(0x0410, ST77XX_BLACK);
+  tft.print("[########..]");
   }
