@@ -36,9 +36,16 @@
 #include <Coordinates.h>
 Coordinates point = Coordinates();
 
+#define leftbutton 25
+#define middlebutton 26
+#define rightbutton 27
+
 #define TFT_CS 5
 #define TFT_RST 22
 #define TFT_DC 21
+
+#define xOffset 64
+#define yOffset 80
 //
 // define not needed for all pins; reference for ESP32 physical pins connections to VSPI:
 // SDA  GPIO23 aka VSPI MOSI
@@ -79,7 +86,12 @@ void setup(void)
 {
   Serial.begin(9600);
   Serial.print(F("Hello! 2019 IEE Garmin Smart Watch..."));
-
+  pinMode(leftbutton, INPUT);
+  digitalWrite(leftbutton, HIGH);
+  pinMode(middlebutton, INPUT);
+  digitalWrite(middlebutton, HIGH);
+  pinMode(rightbutton, INPUT);
+  digitalWrite(rightbutton, HIGH);
   // OR use this initializer (uncomment) if using a 1.44" TFT:
   tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
   Serial.println(F("Initializing display..."));
@@ -100,17 +112,23 @@ void setup(void)
 
   Serial.println("Done.");
   delay(1000);
-
-
+  
   //setTime(hr,min,sec,day,mnth,yr);
-  setTime(19,05,0,12,11,2019);
-}
+  setTime(18,59,0,12,11,2019);
 
+
+}
+int prevSecond = second();
 void loop()
 {
 //tftPrintTest();
-  //displayAnalog();
-  displayDigital();
+  displayButton();
+  if (second() == (prevSecond + 1 == 60 ? 0 : prevSecond + 1))
+  {
+    displayAnalog();
+    prevSecond = second();
+  }
+  //displayDigital();
 //  tft.invertDisplay(true);
 //  delay(500);
 //  tft.invertDisplay(false);
@@ -135,31 +153,76 @@ void testdrawrects(uint16_t color)
 }
 
 //Analog Clock -- NEEDS WORK...
+float secPhi = second()*6*PI/180;
+float minPhi = minute()*6*PI/180;
+float hourPhi = hourFormat12()*30*PI/180;
 void displayAnalog(){
-  tft.drawCircle(64, 80, 45, 0xFFFF);
-  //r cos phi + 64
+  tft.drawLine(xOffset,yOffset, xcart(22,hourPhi), ycart(22, hourPhi), 0x0000);
+  tft.drawLine(xOffset,yOffset, xcart(44,minPhi), ycart(44, minPhi), 0x0000);
+  tft.drawLine(xOffset,yOffset, xcart(44,secPhi), ycart(44, secPhi), 0x0000);
+  tft.drawCircle(xOffset, yOffset, 45, 0xFFFF);
 
-  float phi = (second()*6);
-  double xcart = 45*cos(phi);
-  double ycart = 45*sin(phi);
-  
-  
-  tft.setCursor(0,10);
-  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
-  tft.println(xcart);
-  tft.println(ycart);
-  tft.println(phi);
+  secPhi = second()*6*PI/180;
+  minPhi = minute()*6*PI/180;
+  hourPhi = hourFormat12()*30*PI/180;
 
-  //point.fromPolar(5, phi);
-  tft.drawLine(64,80, xcart, ycart, 0xFFFF);
-  //tft.drawLine(64,80, point.getX(), point.getY(), 0xFFFF);
+  for (int i = 0; i < 12; i ++)
+  {
+    float phi = i * 30 * PI / 180;
+    tft.drawLine(xcart(42,phi), ycart(42, phi), xcart(45, phi), ycart(45, phi), 0xFFFF);
   }
+  
+  tft.drawLine(xOffset,yOffset, xcart(22,hourPhi), ycart(22, hourPhi), 0xFFFF);
+  tft.drawLine(xOffset,yOffset, xcart(44,minPhi), ycart(44, minPhi), 0xFFFF);
+  tft.drawLine(xOffset,yOffset, xcart(44,secPhi), ycart(44, secPhi), 0xF000);
+}
 
-void displayDigital(){
+double xcart(int r, double phi) {
+  return(r*sin(phi)+xOffset);  
+}
+double ycart(int r, double phi) {
+  return(-r*cos(phi)+yOffset);  
+}
+
+void displayDigital() {
   displayTime();
   displayDate();
   displayBatt();
+}
+
+void displayButton() {
+    //testing button press
+  if (digitalRead(leftbutton)==1) {
+    tft.setCursor(0,25);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("ON");
+    }
+  else {
+    tft.setCursor(0,25);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("OFF");
   }
+  if (digitalRead(middlebutton)==1) {
+    tft.setCursor(0,50);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("ON");
+    }
+  else {
+    tft.setCursor(0,50);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("OFF");
+  }
+  if (digitalRead(rightbutton)==1) {
+    tft.setCursor(0,75);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("ON");
+    }
+  else {
+    tft.setCursor(0,75);
+    tft.setTextColor(0x0418, ST77XX_BLACK);
+    tft.print("OFF");
+  }
+}
 
 void tftPrintTest()
 {
