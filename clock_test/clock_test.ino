@@ -81,7 +81,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 //Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 float p = 3.1415926;
-
+bool analog = 1;
 void setup(void)
 {
   Serial.begin(9600);
@@ -106,33 +106,91 @@ void setup(void)
 
   //Display functions can go here:
   testdrawtext("garmin@watch:~ $ now", ST77XX_WHITE);
-  delay(500);
+  delay(300);
 
 
 
   Serial.println("Done.");
   delay(1000);
-  
+
   //setTime(hr,min,sec,day,mnth,yr);
-  setTime(18,59,0,12,11,2019);
+  setTime(18, 59, 0, 12, 11, 2019);
 
 
 }
+
+
 int prevSecond = second();
 void loop()
 {
-//tftPrintTest();
-  displayButton();
-  if (second() == (prevSecond + 1 == 60 ? 0 : prevSecond + 1))
-  {
+  if (digitalRead(middlebutton) == 1) {
+     Serial.println("Launching Menu...");
+      //Launch Menu
+      tft.fillScreen(ST77XX_WHITE);
+      tft.setTextColor(ST77XX_BLACK);
+      tft.setCursor(0, 0);
+      tft.print("ANALOG");
+      tft.setCursor(0, 16);
+      tft.print("DIGITAL");
+      
+    while (!menu()) {
+      //do nothing i.e. loop
+      Serial.print(".");
+      delay(100);
+      }
+    tft.fillScreen(ST77XX_BLACK);
+    testdrawtext("garmin@watch:~ $ now", ST77XX_WHITE);
+  }
+  else {
+    displayButton();    //FOR DEBUG
+
+    if (analog) {
+      if (second() == (prevSecond + 1 == 60 ? 0 : prevSecond + 1))
+      {
+        displayAnalog();    //Render Analog Clock
+        prevSecond = second();
+      }
+    }
+    else {
+      displayDigital();   //Render Digital Clock
+    }
+  }
+}
+
+
+bool menu()
+{
+  if (digitalRead(leftbutton) == 1) {
+    Serial.println("Analog mode...");
+    
+    tft.setCursor(0, 0);
+    tft.setTextColor(ST77XX_BLUE);
+    tft.print("ANALOG");
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setCursor(0, 16);
+    tft.print("DIGITAL");
+    analog = 1;
+    delay(300);
     displayAnalog();
     prevSecond = second();
+    return true;
   }
-  //displayDigital();
-//  tft.invertDisplay(true);
-//  delay(500);
-//  tft.invertDisplay(false);
-//  delay(500);
+  else if (digitalRead(rightbutton) == 1) {
+    Serial.println("Digital mode...");
+    
+    tft.setCursor(0, 0);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.print("ANALOG");
+    tft.setCursor(0, 16);
+    tft.setTextColor(ST77XX_BLUE);
+    tft.print("DIGITAL");
+    analog = 0;
+    delay(300);
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 void testdrawtext(char *text, uint16_t color)
@@ -153,35 +211,36 @@ void testdrawrects(uint16_t color)
 }
 
 //Analog Clock -- NEEDS WORK...
-float secPhi = second()*6*PI/180;
-float minPhi = minute()*6*PI/180;
-float hourPhi = hourFormat12()*30*PI/180;
-void displayAnalog(){
-  tft.drawLine(xOffset,yOffset, xcart(22,hourPhi), ycart(22, hourPhi), 0x0000);
-  tft.drawLine(xOffset,yOffset, xcart(44,minPhi), ycart(44, minPhi), 0x0000);
-  tft.drawLine(xOffset,yOffset, xcart(44,secPhi), ycart(44, secPhi), 0x0000);
+float secPhi = second() * 6 * PI / 180;
+float minPhi = minute() * 6 * PI / 180;
+float hourPhi = hourFormat12() * 30 * PI / 180;
+
+void displayAnalog() {
+  tft.drawLine(xOffset, yOffset, xcart(22, hourPhi), ycart(22, hourPhi), 0x0000);
+  tft.drawLine(xOffset, yOffset, xcart(44, minPhi), ycart(44, minPhi), 0x0000);
+  tft.drawLine(xOffset, yOffset, xcart(44, secPhi), ycart(44, secPhi), 0x0000);
   tft.drawCircle(xOffset, yOffset, 45, 0xFFFF);
 
-  secPhi = second()*6*PI/180;
-  minPhi = minute()*6*PI/180;
-  hourPhi = hourFormat12()*30*PI/180;
+  secPhi = second() * 6 * PI / 180;
+  minPhi = minute() * 6 * PI / 180;
+  hourPhi = hourFormat12() * 30 * PI / 180;
 
   for (int i = 0; i < 12; i ++)
   {
     float phi = i * 30 * PI / 180;
-    tft.drawLine(xcart(42,phi), ycart(42, phi), xcart(45, phi), ycart(45, phi), 0xFFFF);
+    tft.drawLine(xcart(42, phi), ycart(42, phi), xcart(45, phi), ycart(45, phi), 0xFFFF);
   }
-  
-  tft.drawLine(xOffset,yOffset, xcart(22,hourPhi), ycart(22, hourPhi), 0xFFFF);
-  tft.drawLine(xOffset,yOffset, xcart(44,minPhi), ycart(44, minPhi), 0xFFFF);
-  tft.drawLine(xOffset,yOffset, xcart(44,secPhi), ycart(44, secPhi), 0xF000);
+
+  tft.drawLine(xOffset, yOffset, xcart(22, hourPhi), ycart(22, hourPhi), 0xFFFF);
+  tft.drawLine(xOffset, yOffset, xcart(44, minPhi), ycart(44, minPhi), 0xFFFF);
+  tft.drawLine(xOffset, yOffset, xcart(44, secPhi), ycart(44, secPhi), 0xF000);
 }
 
 double xcart(int r, double phi) {
-  return(r*sin(phi)+xOffset);  
+  return (r * sin(phi) + xOffset);
 }
 double ycart(int r, double phi) {
-  return(-r*cos(phi)+yOffset);  
+  return (-r * cos(phi) + yOffset);
 }
 
 void displayDigital() {
@@ -191,34 +250,34 @@ void displayDigital() {
 }
 
 void displayButton() {
-    //testing button press
-  if (digitalRead(leftbutton)==1) {
-    tft.setCursor(0,25);
+  //testing button press
+  if (digitalRead(leftbutton) == 1) {
+    tft.setCursor(0, 25);
     tft.setTextColor(0x0418, ST77XX_BLACK);
-    tft.print("ON");
-    }
+    tft.print("ON ");
+  }
   else {
-    tft.setCursor(0,25);
+    tft.setCursor(0, 25);
     tft.setTextColor(0x0418, ST77XX_BLACK);
     tft.print("OFF");
   }
-  if (digitalRead(middlebutton)==1) {
-    tft.setCursor(0,50);
+  if (digitalRead(middlebutton) == 1) {
+    tft.setCursor(0, 50);
     tft.setTextColor(0x0418, ST77XX_BLACK);
-    tft.print("ON");
-    }
+    tft.print("ON ");
+  }
   else {
-    tft.setCursor(0,50);
+    tft.setCursor(0, 50);
     tft.setTextColor(0x0418, ST77XX_BLACK);
     tft.print("OFF");
   }
-  if (digitalRead(rightbutton)==1) {
-    tft.setCursor(0,75);
+  if (digitalRead(rightbutton) == 1) {
+    tft.setCursor(0, 75);
     tft.setTextColor(0x0418, ST77XX_BLACK);
-    tft.print("ON");
-    }
+    tft.print("ON ");
+  }
   else {
-    tft.setCursor(0,75);
+    tft.setCursor(0, 75);
     tft.setTextColor(0x0418, ST77XX_BLACK);
     tft.print("OFF");
   }
@@ -226,7 +285,7 @@ void displayButton() {
 
 void tftPrintTest()
 {
-  tft.setCursor(0,0);
+  tft.setCursor(0, 0);
   tft.fillScreen(ST77XX_BLACK);
   tft.setTextWrap(false);
   tft.setTextColor(ST77XX_WHITE);
@@ -238,48 +297,48 @@ void tftPrintTest()
   tft.print(" seconds.");
 }
 
-void displayTime(){
-  tft.setCursor(0,0);
+void displayTime() {
+  tft.setCursor(0, 0);
   //tft.fillScreen(ST77XX_BLACK); commenting out to avoid obvious refresh artifact
   tft.setTextWrap(false);
   tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
   tft.setTextSize(1);
-  tft.setCursor(0,24);
+  tft.setCursor(0, 24);
   tft.print("[TIME] ");
   tft.setTextColor(0xFADF, ST77XX_BLACK);
-  if(hour() < 10){
-      tft.print("0");
-    }
+  if (hour() < 10) {
+    tft.print("0");
+  }
   tft.print(hour());
   tft.print(":");
-  if(minute() < 10){
-      tft.print("0");
-    }
+  if (minute() < 10) {
+    tft.print("0");
+  }
   tft.print(minute());
   tft.print(":");
-  if(second() < 10){
+  if (second() < 10) {
     tft.print("0");
   }
   tft.print(second());
   delay(500);
-  }
+}
 
-  void displayDate(){
-    tft.setCursor(0,34);
-    tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
-    tft.print("[DATE] ");
-    tft.setTextColor(0x0418, ST77XX_BLACK);
-    tft.print(day());
-    tft.print("/");
-    tft.print(month());
-    tft.print("/");
-    tft.print(year());
-    }
+void displayDate() {
+  tft.setCursor(0, 34);
+  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+  tft.print("[DATE] ");
+  tft.setTextColor(0x0418, ST77XX_BLACK);
+  tft.print(day());
+  tft.print("/");
+  tft.print(month());
+  tft.print("/");
+  tft.print(year());
+}
 
-void displayBatt(){
-  tft.setCursor(0,44);
+void displayBatt() {
+  tft.setCursor(0, 44);
   tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
   tft.print("[BATT] ");
   tft.setTextColor(0x0410, ST77XX_BLACK);
   tft.print("[########..]");
-  }
+}
